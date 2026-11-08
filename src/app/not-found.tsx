@@ -1,0 +1,2 @@
+import Link from 'next/link';
+export default function NotFound() { return <main className="grid min-h-screen place-items-center bg-slate-50 text-slate-900"><div className="text-center"><h1 className="mb-3 text-3xl font-semibold">This page isn’t here</h1><p className="mb-6 text-slate-500">Let’s get you back to your command center.</p><Link href="/dashboard" className="rounded-lg bg-blue-600 px-5 py-3 text-white">Back to dashboard</Link></div></main>; }
