@@ -25,6 +25,8 @@ export interface CallRecord {
   status: string;
   outcome: string | null;
   duration_seconds: number | null;
+  billed_minutes?: number | null;
+  bonzo_prospect_id?: string | null;
   summary: string | null;
   mode: IntegrationMode;
   created_at: string;

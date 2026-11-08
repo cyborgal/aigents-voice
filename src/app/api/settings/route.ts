@@ -12,7 +12,7 @@ export async function PATCH(request: Request) {
     const { data: existing, error: readError } = await supabase.from('businesses').select('*').eq('id', user.id).single();
     if (readError || !existing) throw new ApiError('Complete onboarding first.', 409);
     if (existing.activation_status === 'pending') throw new ApiError('Wait for activation to finish before changing settings.', 409);
-    if (existing.activation_status === 'active' && existing.integration_mode === integrationMode()) {
+    if (existing.integration_mode === 'demo' && existing.activation_status === 'active') {
       await voiceAdapter().updateSettings({ ...existing, ...input } as Business);
     }
     const { data, error } = await createAdmin().from('businesses').update(input).eq('id', user.id).select().single();

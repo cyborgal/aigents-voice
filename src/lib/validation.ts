@@ -18,7 +18,7 @@ export const businessSchema = z.object({
   calling_end: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   agent_name: z.string().trim().min(2).max(80).default('AIGents Assistant'),
 }).refine(v => v.calling_start < v.calling_end, { message: 'End time must be later than start time.', path: ['calling_end'] });
-export const callSchema = z.object({ phone: phoneSchema, consent: z.literal(true), idempotencyKey: z.uuid() });
+export const callSchema = z.object({ phone: phoneSchema, prospectName: z.string().trim().min(1).max(100).optional(), consent: z.literal(true), idempotencyKey: z.uuid() });
 export function maskPhone(phone: string) { return `••• ••• ${phone.slice(-4)}`; }
 export function isWithinCallingHours(business: { timezone: string; calling_days: number[]; calling_start: string; calling_end: string }, now = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', { timeZone: business.timezone, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);

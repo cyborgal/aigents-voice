@@ -9,6 +9,10 @@ export async function POST(request: Request) {
     const { user, supabase } = await requireUser();
     const { data: business, error } = await supabase.from('businesses').select('*').eq('id', user.id).single();
     if (error || !business) throw new ApiError('Complete onboarding before activating your agent.', 409);
+    if (business.integration_mode === 'live') {
+      if (business.activation_status === 'active' && business.id === 'a7c3c543-c31a-4d2a-8e8d-79d0c55cd442') return NextResponse.json({ business });
+      throw new ApiError('Live activation requires an already provisioned workspace.', 403);
+    }
     const mode = integrationMode();
     if (business.activation_status === 'active' && business.integration_mode === mode) return NextResponse.json({ business });
     const admin = createAdmin();

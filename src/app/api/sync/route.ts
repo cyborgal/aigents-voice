@@ -8,7 +8,13 @@ export async function POST(request: Request) {
     requireSameOrigin(request);
     const { user, supabase } = await requireUser();
     const { data: business } = await supabase.from('businesses').select('*').eq('id', user.id).single();
-    if (!business || business.activation_status !== 'active' || business.integration_mode !== integrationMode()) throw new ApiError('Activate your agent before syncing activity.', 409);
+    if (!business) throw new ApiError('Complete onboarding first.', 409);
+    if (business.integration_mode === 'live') {
+      const { data: calls, error } = await supabase.from('calls').select('*').eq('user_id', user.id).eq('mode', 'live').order('created_at', { ascending: false }).limit(200);
+      if (error) throw error;
+      return NextResponse.json({ calls });
+    }
+    if (business.activation_status !== 'active') throw new ApiError('Activate your agent before syncing activity.', 409);
     const mode = integrationMode();
     const result = await voiceAdapter().sync(business as Business);
     const admin = createAdmin();
