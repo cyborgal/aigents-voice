@@ -8,7 +8,7 @@ Live app: https://aigents-voice.vercel.app · Interactive preview: https://aigen
 
 Implemented: signup/login/email callback/logout, session refresh, tenant-isolated database, saved onboarding, activation state machine, guarded test-call API, call history and detail summaries, business settings, responsive dashboard, and interactive demo preview.
 
-**Voice mode is currently `demo`.** Activation and calls are explicitly simulated. No real outbound phone calls occur until the production contracts are supplied, the live adapter is configured, and `VOICE_MODE=live` is set. `/demo` is a separate fictional, in-memory preview; it never accesses production data. Live accounts start with empty history. No paid plans, billing, transcripts, or recordings are enabled.
+New workspaces use explicitly labeled `demo` activation and calls. Paige Bui’s provisioned beta workspace uses the live n8n test-call webhook, restricted to the approved test number and configured calling hours. Existing n8n workflows write Bonzo leads and RingCentral call completions to Supabase. `/demo` remains a fictional preview. No billing, transcript retrieval, or recording retrieval is enabled.
 
 ## Local setup
 
@@ -62,7 +62,7 @@ See [provisional request/response contracts](docs/integrations.md). They are an 
 - An atomic database reservation limits each account to one test call per 60 seconds and ten per UTC day.
 - Idempotency prevents duplicate dispatch. Unknown initiation outcomes are not automatically retried.
 - Only masked destinations are saved. Raw numbers are passed server-to-server to the voice backend.
-- History synchronization is initiated with Refresh on Conversations. Webhook and background polling support are not implemented.
+- Leads and call history are read from Supabase, where the existing n8n workflows write them. Refresh reloads the latest records. Initiation and RingCentral completion may have different IDs and are displayed separately.
 - Dashboard values derive from the latest 200 records. Usage snapshots are accepted by the adapter; durable provider billing totals and appointment aggregates remain to be integrated. Missing outcomes are not fabricated.
 
 ## Deployment
