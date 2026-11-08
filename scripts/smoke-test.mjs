@@ -1,11 +1,11 @@
-// Creates and removes one disposable account; requires a local server in demo mode.
+// Creates and removes one disposable account; runs only in demo mode.
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 
 assert.equal(process.env.VOICE_MODE, 'demo', 'Smoke tests must never place live calls.');
 const base = process.env.TEST_APP_URL || 'http://localhost:3000';
-assert.equal(new URL(base).hostname, 'localhost', 'This script is restricted to the local app.');
+assert.ok(['http://localhost:3000', 'https://aigents-voice.vercel.app'].includes(base), 'Use only the local app or the verified production project.');
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
 const email = `smoke-${randomUUID()}@example.com`;
 const password = `${randomUUID()}Aa9!`;

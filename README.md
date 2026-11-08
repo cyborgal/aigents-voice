@@ -2,6 +2,8 @@
 
 A self-service voice command center for mortgage loan officers. Built with Next.js App Router, TypeScript, Tailwind CSS, and Supabase Auth/Postgres. Existing Grok, RingCentral, n8n, Redis, and Bonzo infrastructure stays behind authenticated HTTP adapters.
 
+Live app: https://aigents-voice.vercel.app · Interactive preview: https://aigents-voice.vercel.app/demo
+
 ## Current status
 
 Implemented: signup/login/email callback/logout, session refresh, tenant-isolated database, saved onboarding, activation state machine, guarded test-call API, call history and detail summaries, business settings, responsive dashboard, and interactive demo preview.
@@ -87,6 +89,7 @@ npm run build
 node --env-file=.env.local scripts/smoke-test.mjs
 ```
 
-18 unit tests cover validation, calling windows/DST, consent, provider contracts, tenant identity, safe error handling, and demo/live separation. Database transaction tests verified RLS, denied browser writes, idempotency, cooldown and daily caps with rollback. The authenticated smoke script creates and removes a disposable account and verifies login, onboarding, activation, a simulated call, history, settings, sync, CSRF/anonymous rejection, rate limiting, and logout.
+18 unit tests cover validation, calling windows/DST, consent, provider contracts, tenant identity, safe error handling, and demo/live separation. Database transaction tests verified RLS, denied browser writes, idempotency, cooldown and daily caps with rollback. The authenticated smoke test passed both locally and against the production URL. It creates and removes a disposable account and verifies login, onboarding, activation, a simulated call, history, settings, sync, CSRF/anonymous rejection, rate limiting, and logout.
 
 Email delivery/confirmation and real outbound calling still require live verification. Browser visual QA was interrupted by the local computer-use environment; production compilation and HTTP/API tests are independent of that limitation.
+
