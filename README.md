@@ -10,6 +10,8 @@ Implemented: signup/login/email callback/logout, session refresh, tenant-isolate
 
 New workspaces use explicitly labeled `demo` activation and calls. Paige Bui’s provisioned beta workspace uses the live n8n test-call webhook, restricted to the approved test number and configured calling hours. Existing n8n workflows write Bonzo leads and RingCentral call completions to Supabase. `/demo` remains a fictional preview. No billing, transcript retrieval, or recording retrieval is enabled.
 
+The Bonzo Leads page has a **Call Lead** action for an eligible approved test-number row. It sends only the lead UUID to the authenticated server route, which verifies workspace ownership, DNC, and the saved Bonzo ID and phone. The action currently returns a clear pause message before outbound dispatch: n8n must independently verify Bonzo ownership before CRM-linked calling can be enabled. Standalone Test Call remains live for the approved number.
+
 ## Local setup
 
 Use Node 22.13+ (Node 24 recommended) and npm.

@@ -4,15 +4,34 @@ import { createAdmin } from '@/lib/supabase/server';
 import { callSchema, isWithinCallingHours, maskPhone, normalizePhone } from '@/lib/validation';
 import { integrationMode, voiceAdapter } from '@/lib/voice';
 import type { Business } from '@/lib/types';
+import { z } from 'zod';
 
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
     const { user, supabase } = await requireUser();
-    const input = callSchema.parse(await readBody(request));
+    const body = await readBody(request);
+    const leadRequest = body && typeof body === 'object' && 'leadId' in body;
+    const leadInput = leadRequest ? z.object({ leadId: z.uuid(), consent: z.literal(true), idempotencyKey: z.uuid() }).parse(body) : null;
+    const input = leadInput ? null : callSchema.parse(body);
     const { data: business } = await supabase.from('businesses').select('*').eq('id', user.id).single();
     const mode = business?.integration_mode || integrationMode();
     if (!business || business.activation_status !== 'active') throw new ApiError('Your voice agent is not active yet.', 409);
+    let verifiedBonzoId: string | null = null;
+    if (leadInput) {
+      const { data: lead, error: leadError } = await supabase.from('leads').select('id,business_id,bonzo_prospect_id,full_name,phone,do_not_call').eq('id', leadInput.leadId).eq('business_id', user.id).maybeSingle();
+      if (leadError) throw leadError;
+      if (!lead) throw new ApiError('Lead not found in your workspace.', 404);
+      if (lead.do_not_call) throw new ApiError('This lead is marked Do Not Call.', 403);
+      if (!lead.bonzo_prospect_id || !lead.phone) throw new ApiError('This lead needs a Bonzo ID and phone number before calling.', 409);
+      const phone = normalizePhone(lead.phone);
+      if (phone !== '+19497775744') throw new ApiError('Lead calls are restricted to the approved test number +19497775744.', 403);
+      verifiedBonzoId = lead.bonzo_prospect_id;
+      // n8n accepts the ID but does not yet verify Bonzo ownership. Never send
+      // CRM-linked requests until that independent check is confirmed.
+      throw new ApiError('CRM-linked calls are paused until the voice workflow verifies Bonzo lead ownership. Use Test Call for the approved number.', 409);
+    }
+    if (!input) throw new ApiError('Invalid call request.');
     if (mode === 'live') {
       if (business.id !== 'a7c3c543-c31a-4d2a-8e8d-79d0c55cd442' || business.external_client_id !== 'pbui@westcapitallending.com') throw new ApiError('Live test calling is not provisioned for this workspace.', 403);
       const allowed = ['+19497775744'];
@@ -38,7 +57,7 @@ export async function POST(request: Request) {
       if (mode === 'live') {
         const secret = process.env.N8N_VOICE_WEBHOOK_SECRET;
         if (!secret) throw new Error('Missing voice webhook secret');
-        const response = await fetch('https://flows.aigentsgroup.com/webhook/aigents-voice-test-call', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-aigents-secret': secret }, body: JSON.stringify({ lo_email: business.external_client_id, phone: input.phone, prospect_name: input.prospectName || 'Test Caller' }), signal: AbortSignal.timeout(15000), cache: 'no-store', redirect: 'error' });
+        const response = await fetch('https://flows.aigentsgroup.com/webhook/aigents-voice-test-call', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-aigents-secret': secret }, body: JSON.stringify({ lo_email: business.external_client_id, phone: input.phone, prospect_name: input.prospectName || 'Test Caller', ...(verifiedBonzoId ? { bonzo_prospect_id: verifiedBonzoId } : {}) }), signal: AbortSignal.timeout(15000), cache: 'no-store', redirect: 'error' });
         if (!response.ok) throw new Error('Voice webhook rejected request');
         const payload = await response.json();
         if (payload?.success !== true || payload?.status !== 'initiated' || typeof payload.call_id !== 'string') throw new Error('Voice webhook did not confirm call');
