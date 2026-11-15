@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireUser } from '@/lib/api';
+import { ApiError, requireUser } from '@/lib/api';
 import { createAdmin } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -46,7 +46,7 @@ export async function GET(_request: Request, context: { params: Promise<{ callId
     return NextResponse.json({ url: data.signedUrl, expiresIn: 300 }, { headers: { 'Cache-Control': 'no-store, private' } });
   } catch (error) {
     // Never expose internal storage paths, tokens or service-role errors.
-    if (error instanceof Error && error.message === 'Unauthorized') {
+    if (error instanceof ApiError && error.status === 401) {
       return NextResponse.json({ error: 'Sign in to play recordings.' }, { status: 401, headers: { 'Cache-Control': 'no-store' } });
     }
     return NextResponse.json({ error: 'Unable to load recording.' }, { status: 500, headers: { 'Cache-Control': 'no-store' } });
