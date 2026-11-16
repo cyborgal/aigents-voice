@@ -57,7 +57,7 @@ Never use the newly-written 180-second number-pair intent for disconnect authori
 ### 3. Handle recording finalization and dashboard-upsert timing
 
 - RingCentral Call Log may be available before its `recording.contentUri`; retry the retrieval with bounded backoff and a clear failure path.
-- The dashboard upsert and recording upload run on independent branches. The PATCH `calls?external_id=eq.<callLogId>` may return an empty list. Keep a bounded delayed retry (e.g. 2, 5, 10, 20, 30 seconds), checking the response has exactly one correct `user_id`, `external_id`, `recording_path`. A missing row must be reported, not silently considered success.
+- The dashboard upsert and recording upload run on independent branches. The PATCH `calls?external_id=eq.<callLogId>` may return an empty list. Keep a bounded delayed retry (e.g. 2, 5, 10, 20, 30 seconds), checking the response has exactly one correct `user_id`, `external_id`, `recording_path`. Include `user_id=eq.<Upsert Dashboard Call.user_id>` alongside `external_id=eq.<callLogId>` on the PATCH filter; never update all matching external IDs across workspaces. A missing row must be reported, not silently considered success.
 - Storage `x-upsert=true` supports retrying the same `extensionId/recordingId.mp3` path. Preserve idempotent semantics for duplicate webhook executions.
 - Upload and playback failure must **not** interrupt billing, summary extraction, or existing email notifications.
 
@@ -76,3 +76,7 @@ Verify permission/consent and legally required recording announcements for all p
 ### Rollout gate
 
 The browser playback PR can be merged only after build/typecheck and manual owner-vs-other-user access tests. The n8n workflow must be separately saved, activated and verified using one new successful RingOut test; this repository cannot itself deploy an n8n workflow.
+
+### Simpler ordering in the existing workflow
+
+In the saved beta workflow, `Upsert Dashboard Call` already exists downstream of `Get Call Log`. Preferred wiring: connect `Upsert Dashboard Call` → `Recording - Find Completed Recording` instead of connecting the recording archive branch directly to `Get Call Log`. Change `Recording - Find Completed Recording` to read `$('Get Call Log').first().json.records`, not `$input.first().json.records`. This prevents recording upload/patch from racing ahead of the dashboard call row. Keep the billing and notification branches untouched. 
