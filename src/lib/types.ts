@@ -28,6 +28,7 @@ export interface CallRecord {
   billed_minutes?: number | null;
   bonzo_prospect_id?: string | null;
   summary: string | null;
+  recording_path?: string | null;
   mode: IntegrationMode;
   created_at: string;
   idempotency_key?: string;
